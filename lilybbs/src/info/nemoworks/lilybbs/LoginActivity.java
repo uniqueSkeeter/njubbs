@@ -28,7 +28,7 @@ public class LoginActivity extends Activity {
 				if (username.getText().toString().length() > 0 && password.getText().toString().length() > 0) {
 					if (username.getText().toString().equals("wr") && password.getText().toString().equals("wr")) {
 
-						Intent intent = new Intent(LoginActivity.this, TopActivity.class);
+						Intent intent = new Intent(LoginActivity.this, NaviActivity.class);
 						LoginActivity.this.startActivity(intent);
 					}
 				}

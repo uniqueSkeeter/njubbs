@@ -7,6 +7,7 @@
 	<string name="title_activity_top">TopActivity</string>
     <string name="connection_error">无法连接</string>
     <string-array name="planets_array">
+        <item>全站十大</item>
         <item>Mercury</item>
         <item>Venus</item>
         <item>Earth</item>

@@ -1,30 +1,37 @@
 package info.nemoworks.lilybbs;
 
-import java.util.Locale;
+import java.util.ArrayList;
 
-import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentManager;
+import org.htmlparser.Parser;
+import org.htmlparser.filters.AndFilter;
+import org.htmlparser.filters.HasAttributeFilter;
+import org.htmlparser.filters.NodeClassFilter;
+import org.htmlparser.tags.LinkTag;
+import org.htmlparser.tags.TableColumn;
+import org.htmlparser.tags.TableRow;
+import org.htmlparser.tags.TableTag;
+import org.htmlparser.util.NodeList;
+import org.htmlparser.util.ParserException;
+
+import android.app.ListActivity;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class NaviActivity extends Activity {
+public class NaviActivity extends ListActivity {
 
 	private DrawerLayout mDrawerLayout;
 
@@ -44,6 +51,7 @@ public class NaviActivity extends Activity {
 		this.setContentView(R.layout.activity_navi);
 
 		this.mTitle = this.mDrawerTitle = this.getTitle();
+		// 把标签组放入数组中
 		this.mPlanetTitles = this.getResources().getStringArray(R.array.planets_array);
 		this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
 		this.mDrawerList = (ListView) this.findViewById(R.id.left_drawer);
@@ -137,15 +145,10 @@ public class NaviActivity extends Activity {
 	}
 
 	private void selectItem(int position) {
-		// update the main content by replacing fragments
-		Fragment fragment = new PlanetFragment();
-		Bundle args = new Bundle();
-		args.putInt(PlanetFragment.ARG_PLANET_NUMBER, position);
-		fragment.setArguments(args);
-
-		FragmentManager fragmentManager = this.getFragmentManager();
-		fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
-
+		System.out.println(position);
+		if (position == 0) {
+			new DownloadTask().execute("http://bbs.nju.edu.cn/bbstop10");
+		}
 		// update selected item and title, then close the drawer
 		this.mDrawerList.setItemChecked(position, true);
 		this.setTitle(this.mPlanetTitles[position]);
@@ -176,28 +179,68 @@ public class NaviActivity extends Activity {
 		this.mDrawerToggle.onConfigurationChanged(newConfig);
 	}
 
-	/**
-	 * Fragment that appears in the "content_frame", shows a planet
-	 */
-	public static class PlanetFragment extends Fragment {
-
-		public static final String ARG_PLANET_NUMBER = "planet_number";
-
-		public PlanetFragment() {
-			// Empty constructor required for fragment subclasses
-		}
+	private class DownloadTask extends AsyncTask<String, Void, String[]> {
 
 		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_planet, container, false);
-			int i = this.getArguments().getInt(ARG_PLANET_NUMBER);
-			String planet = this.getResources().getStringArray(R.array.planets_array)[i];
+		protected String[] doInBackground(String... urls) {
+			try {
+				return NaviActivity.this.parseTop10();
+			} catch (ParserException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
 
-			int imageId = this.getResources().getIdentifier(planet.toLowerCase(Locale.getDefault()), "drawable",
-					this.getActivity().getPackageName());
-			((ImageView) rootView.findViewById(R.id.image)).setImageResource(imageId);
-			this.getActivity().setTitle(planet);
-			return rootView;
+		/**
+		 * Uses the logging framework to display the output of the fetch operation in the log fragment.
+		 */
+		@Override
+		protected void onPostExecute(String[] results) {
+			// Log.i(TAG, result);
+
+			ArrayAdapter<String> adapter = new ArrayAdapter<String>(NaviActivity.this, android.R.layout.simple_list_item_1,
+					results);
+
+			NaviActivity.this.setListAdapter(adapter);
+
 		}
 	}
+
+	private String[] parseTop10() throws ParserException {
+		// System.out.println("INININININININNINNINININI!!!!!!!!!!!!!!!!");
+		final String DW_HOME_PAGE_URL = "http://bbs.nju.edu.cn/bbstop10";
+		ArrayList<String> pTitleList = new ArrayList<String>();
+		// 创建 html parser 对象，并指定要访问网页的 URL 和编码格式
+		Parser htmlParser = new Parser(DW_HOME_PAGE_URL);
+		htmlParser.setEncoding("UTF-8");
+		String postTitle = "";
+		// 获取指定的 div 节点，即 <div> 标签，并且该标签包含有属性 id 值为“tab1”
+		NodeList toptable = htmlParser.extractAllNodesThatMatch(new AndFilter(new NodeClassFilter(TableTag.class),
+				new HasAttributeFilter("width", "640")));
+
+		if (toptable != null && toptable.size() > 0) {
+			// 获取指定 div 标签的子节点中的 <li> 节点
+			NodeList itemTopList = toptable.elementAt(0).getChildren()
+					.extractAllNodesThatMatch((new NodeClassFilter(TableRow.class)), true);
+
+			if (itemTopList != null && itemTopList.size() > 0) {
+				for (int i = 0; i < itemTopList.size() - 1; ++i) {
+					// 在 <li> 节点的子节点中获取 Link 节点
+					NodeList linkItem = itemTopList.elementAt(i).getChildren()
+							.extractAllNodesThatMatch(new NodeClassFilter(TableColumn.class), true);
+					if (linkItem != null && linkItem.size() > 0) {
+						// 获取 Link 节点的 Text，即为要获取的推荐文章的题目文字
+						postTitle = ((LinkTag) ((linkItem.elementAt(7)).getChildren().elementAt(0))).getLinkText();
+						System.out.println(postTitle);
+						pTitleList.add(postTitle);
+					}
+				}
+			}
+		}
+		String[] results = new String[pTitleList.size()];
+		pTitleList.toArray(results);
+		return results;
+	}
+
 }
