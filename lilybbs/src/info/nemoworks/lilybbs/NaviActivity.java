@@ -135,6 +135,13 @@ public class NaviActivity extends ListActivity {
 		}
 	}
 
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		Intent intent = new Intent(NaviActivity.this, ReadActivity.class);
+		intent.putExtra("num", position + "");
+		this.startActivity(intent);
+	}
+
 	/* The click listner for ListView in the navigation drawer */
 	private class DrawerItemClickListener implements ListView.OnItemClickListener {
 
@@ -146,7 +153,7 @@ public class NaviActivity extends ListActivity {
 
 	private void selectItem(int position) {
 		System.out.println(position);
-		if (position == 0) {
+		if (position == 1) {
 			new DownloadTask().execute("http://bbs.nju.edu.cn/bbstop10");
 		}
 		// update selected item and title, then close the drawer

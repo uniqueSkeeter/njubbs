@@ -7,15 +7,12 @@
 	<string name="title_activity_top">TopActivity</string>
     <string name="connection_error">无法连接</string>
     <string-array name="planets_array">
+        <item>讨论区首页</item>
         <item>全站十大</item>
-        <item>Mercury</item>
-        <item>Venus</item>
-        <item>Earth</item>
-        <item>Mars</item>
-        <item>Jupiter</item>
-        <item>Saturn</item>
-        <item>Uranus</item>
-        <item>Neptune</item>
+        <item>各区热点</item>
+        <item>精华公布栏</item>
+        <item>本站站规</item>
+        <item>新手指南</item>
     </string-array>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
